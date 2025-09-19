@@ -68,11 +68,25 @@ export class AuthService {
 
   @HandleError('Error refreshing token', 'Token or User')
   async refreshToken(token: string) {
-    const saved = await this.refreshTokenRepo.findValidToken(token);
-    if (!saved) throw new AppError(404, 'Token Not Found');
+    const decoded = this.jwtService.decode(token);
+    if (
+      !decoded ||
+      !(decoded as JWTPayload).sub ||
+      !(decoded as JWTPayload).useCase
+    )
+      throw new AppError(401, 'Invalid RefreshToken token');
 
-    const user = await this.userRepo.findById(saved.userId);
-    if (!user) throw new AppError(404, 'Token Not Found');
+    if ((decoded as JWTPayload).useCase !== 'refresh')
+      throw new AppError(401, 'Invalid RefreshToken token');
+
+    const user = await this.userRepo.findById(decoded.sub);
+    if (!user) throw new AppError(404, 'User Not Found');
+
+    const saved = await this.refreshTokenRepo.findValidToken(
+      decoded.sub,
+      token,
+    );
+    if (!saved || saved === null) throw new AppError(404, 'Token Not Found');
 
     await this.refreshTokenRepo.revokeToken(saved.id);
 
@@ -103,6 +117,7 @@ export class AuthService {
     const refreshToken = this.genTokenByExpires(
       payload,
       this.refreshTokenExpiry,
+      true,
     );
 
     await this.refreshTokenRepo.create({
@@ -128,10 +143,20 @@ export class AuthService {
     return await bcrypt.compare(data, hash);
   }
 
-  private genTokenByExpires(payload: JWTPayload, expiresIn: string) {
-    return this.jwtService.sign(payload, {
-      secret: this.config.getOrThrow<string>(ENVEnum.JWT_SECRET),
-      expiresIn,
-    });
+  private genTokenByExpires(
+    payload: JWTPayload,
+    expiresIn: string,
+    isRefreshToken = false,
+  ) {
+    return this.jwtService.sign(
+      {
+        ...payload,
+        useCase: isRefreshToken ? 'refresh' : 'access',
+      },
+      {
+        secret: this.config.getOrThrow<string>(ENVEnum.JWT_SECRET),
+        expiresIn,
+      },
+    );
   }
 }

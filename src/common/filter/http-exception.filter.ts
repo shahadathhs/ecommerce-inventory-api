@@ -9,7 +9,7 @@ import { Response } from 'express';
 import { errorResponse } from '../utils/response.utils';
 
 @Catch()
-export class AllExceptionsFilter implements ExceptionFilter {
+export class HTTPExceptionsFilter implements ExceptionFilter {
   catch(exception: unknown, host: ArgumentsHost) {
     const ctx = host.switchToHttp();
     const response = ctx.getResponse<Response>();

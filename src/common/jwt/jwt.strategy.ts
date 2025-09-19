@@ -1,4 +1,5 @@
-import { Injectable } from '@nestjs/common';
+import { PrismaService } from '@/lib/prisma/prisma.service';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
@@ -7,7 +8,10 @@ import { JWTPayload } from './jwt.interface';
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
-  constructor(private readonly config: ConfigService) {
+  constructor(
+    private readonly config: ConfigService,
+    private readonly prisma: PrismaService,
+  ) {
     const jwtSecret = config.get<string>(ENVEnum.JWT_SECRET);
     if (!jwtSecret) {
       throw new Error('JWT_SECRET environment variable is not defined');
@@ -19,6 +23,12 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
   }
 
   async validate(payload: JWTPayload) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: payload.sub },
+    });
+
+    if (!user) throw new NotFoundException('User not found');
+
     return payload;
   }
 }

@@ -1,9 +1,12 @@
 import { Module } from '@nestjs/common';
-import { AuthService } from './auth.service';
+import { JwtService } from '@nestjs/jwt';
 import { AuthController } from './auth.controller';
+import { AuthService } from './auth.service';
+import { RefreshTokenRepository } from './repo/refresh-token.repository';
+import { UserRepository } from './repo/user.repository';
 
 @Module({
   controllers: [AuthController],
-  providers: [AuthService],
+  providers: [AuthService, RefreshTokenRepository, UserRepository, JwtService],
 })
 export class AuthModule {}

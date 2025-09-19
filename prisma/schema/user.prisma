@@ -1,0 +1,18 @@
+model User {
+  id String @id @default(uuid())
+
+  email    String @unique
+  username String @unique
+  password String // hashed
+
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @default(now()) @updatedAt
+  
+  // Relations
+  refreshTokens RefreshToken[]
+
+  @@unique([email, username])
+  @@index([email])
+  @@index([username])
+  @@map("users")
+}

@@ -67,3 +67,4 @@ data
 # temp dir
 temp
 tmp
+/generated/prisma

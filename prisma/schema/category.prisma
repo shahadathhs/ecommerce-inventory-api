@@ -1,0 +1,16 @@
+model Category {
+  id String @id @default(uuid())
+
+  name String @unique
+  slug String @unique // auto generated from name
+
+  description String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+
+  // Relations
+  products Product[]
+
+  @@map("categories")
+}

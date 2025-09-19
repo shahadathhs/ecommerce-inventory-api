@@ -1,0 +1,28 @@
+model FileInstance {
+  id String @id @default(uuid())
+
+  filename String // Actual stored filename in Supabase
+  bucket   String // Supabase bucket name
+  path     String   @unique // Path inside the bucket (unique identifier)
+  mimeType String // MIME type (image/png, application/pdf, etc.)
+  size     Int // File size in bytes
+  fileType FileType @default(IMAGE)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+
+  // Relations
+  products Product[]
+
+  @@unique([bucket, path])
+  @@map("file_instances")
+}
+
+enum FileType {
+  IMAGE // jpg, png, gif, etc.
+  VIDEO // mp4, mov, etc.
+  AUDIO // mp3, wav, etc.
+  DOCUMENT // pdf, docx, txt, etc.
+  LINK // external URL
+  ANY // fallback for unknown types
+}

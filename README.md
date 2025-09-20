@@ -92,12 +92,18 @@ src/
  ├── modules/
  │   ├── category/      # Category management (CRUD)
  │   ├── product/       # Product management (CRUD + filters)
- │   ├── auth/          # Authentication (Login, Register, refresh etc)
+ │   ├── auth/          # Authentication (login, register, refresh, etc.)
  ├── common/            # Shared utils, decorators, guards, interceptors
  ├── lib/
- │   ├── prisma/        # Prisma service & migrations
- │   ├── file/          # Supabase file upload service
- └── main.ts            # App entrypoint
+ │   ├── prisma/        # Prisma service & client wrapper
+ │   ├── file/          # Supabase file upload integration
+ └── main.ts            # Application entrypoint
+
+prisma/
+ ├── migrations/        # Database migration files
+ └── schema/            # Prisma schema definition
+
+prisma.config.js        # Prisma CLI/config entry
 ```
 
 ## ✨ Features

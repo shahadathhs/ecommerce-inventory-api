@@ -1,0 +1,38 @@
+services:
+  server:
+    image: shahadathhs/ecommerce-inventory-api:latest
+    platform: linux/amd64
+    container_name: ecommerce_inventory_api
+    restart: always
+    build:
+      context: .
+      dockerfile: Dockerfile
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: postgres://postgres:postgres@db:5432/ecommerce_inventory_db
+    ports:
+      - 4000:4000
+    depends_on:
+      - db
+    command: >
+      sh -c "
+        npx prisma migrate deploy &&
+        pnpm start
+      "
+
+  db:
+    image: postgres
+    container_name: ecommerce_inventory_db
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: ecommerce_inventory_db
+    volumes:
+      - ecommerce_inventory_db:/var/lib/postgresql/data
+    ports:
+      - '5400:5432'
+
+volumes:
+  ecommerce_inventory_db:

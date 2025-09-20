@@ -18,24 +18,26 @@ export class CategoryRepository {
     });
   }
 
-  async findBySlugOrName(slug?: string, name?: string, skip = 0, take = 10) {
+  async findAndCountBySlugOrName(
+    slug?: string,
+    name?: string,
+    skip = 0,
+    take = 10,
+  ) {
     const where = this.buildSlugOrNameFilter(slug, name);
 
-    return this.prisma.category.findMany({
-      where,
-      skip,
-      take,
-      include: {
-        _count: { select: { products: true } },
-      },
-      orderBy: { name: 'asc' },
-    });
-  }
-
-  async countBySlugOrName(slug?: string, name?: string): Promise<number> {
-    const where = this.buildSlugOrNameFilter(slug, name);
-
-    return this.prisma.category.count({ where });
+    return this.prisma.$transaction([
+      this.prisma.category.findMany({
+        where,
+        skip,
+        take,
+        include: {
+          _count: { select: { products: true } },
+        },
+        orderBy: { name: 'asc' },
+      }),
+      this.prisma.category.count({ where }),
+    ]);
   }
 
   async update(

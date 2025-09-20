@@ -6,6 +6,7 @@ import { Global, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Bucket, FileType } from '@prisma/client';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import { randomUUID } from 'crypto';
 import mime from 'mime-types';
 import { PrismaService } from '../prisma/prisma.service';
 
@@ -18,16 +19,24 @@ export class FileService {
     private readonly prisma: PrismaService,
     private readonly configService: ConfigService,
   ) {
+    // MUST use service_role key for server-side operations
     this.supabase = createClient(
       this.configService.getOrThrow<string>(ENVEnum.SUPABASE_URL),
-      this.configService.getOrThrow<string>(ENVEnum.SUPABASE_KEY),
+      this.configService.getOrThrow<string>(ENVEnum.SUPABASE_SERVICE_ROLE_KEY),
     );
   }
 
   /* ================== CRUD ================== */
   @HandleError('Error creating file', 'file')
   async create(createFileDto: CreateFileDto & { bucket: Bucket }) {
-    return this.prisma.fileInstance.create({ data: createFileDto });
+    // generate public URL if bucket is public
+    const { data: publicData } = this.supabase.storage
+      .from(createFileDto.bucket)
+      .getPublicUrl(createFileDto.path);
+
+    return this.prisma.fileInstance.create({
+      data: { ...createFileDto, publicUrl: publicData.publicUrl },
+    });
   }
 
   @HandleError('Error finding file', 'file')
@@ -47,30 +56,11 @@ export class FileService {
     return this.prisma.fileInstance.update({ where: { id }, data });
   }
 
-  @HandleError('Error bulk updating files', 'file')
-  async bulkUpdate(ids: string[], data: Partial<CreateFileDto>) {
-    return this.prisma.fileInstance.updateMany({
-      where: { id: { in: ids } },
-      data,
-    });
-  }
-
   @HandleError('Error deleting file', 'file')
   async remove(id: string) {
     const file = await this.findOne(id);
     await this.deleteFromSupabase(file.bucket, file.path);
     return this.prisma.fileInstance.delete({ where: { id } });
-  }
-
-  @HandleError('Error bulk deleting files', 'file')
-  async bulkDelete(ids: string[]) {
-    const files = await this.prisma.fileInstance.findMany({
-      where: { id: { in: ids } },
-    });
-    await Promise.all(
-      files.map((f) => this.deleteFromSupabase(f.bucket, f.path)),
-    );
-    return this.prisma.fileInstance.deleteMany({ where: { id: { in: ids } } });
   }
 
   /* ================== UPLOAD ================== */
@@ -81,7 +71,7 @@ export class FileService {
 
     const ext = mime.extension(file.mimetype || '') || '';
     const name = file.originalname.split('.')[0];
-    const filename = `${name}.${ext}`;
+    const filename = `${randomUUID()}-${name}.${ext}`;
     const pathInBucket = filename;
 
     const { error } = await this.supabase.storage
@@ -107,7 +97,10 @@ export class FileService {
     return this.create(createFileDto);
   }
 
-  async bulkUpload(files: Express.Multer.File[], bucket = Bucket.product) {
+  async bulkUpload(
+    files: Express.Multer.File[],
+    bucket: Bucket = Bucket.product,
+  ) {
     return Promise.all(files.map((f) => this.processUploadedFile(f, bucket)));
   }
 

@@ -6,6 +6,7 @@ model FileInstance {
   path     String   @unique // Path inside the bucket (unique identifier)
   mimeType String // MIME type (image/png, application/pdf, etc.)
   size     Int // File size in bytes
+  publicUrl String
   fileType FileType @default(IMAGE)
 
   createdAt DateTime @default(now())

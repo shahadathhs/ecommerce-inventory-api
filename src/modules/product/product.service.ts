@@ -8,6 +8,7 @@ import {
 } from '@/common/utils/response.utils';
 import { FileService } from '@/lib/file/file.service';
 import { Injectable } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { CategoryRepository } from '../category/repo/category.repository';
 import {
   CreateProductDto,
@@ -116,13 +117,18 @@ export class ProductService {
       imageFile = { connect: { id: uploaded.id } };
     }
 
-    const updatedProduct = await this.repo.update(id, {
-      ...dto,
-      category: dto.categoryId
-        ? { connect: { id: dto.categoryId } }
-        : undefined,
+    const updateData: Prisma.ProductUpdateInput = {
+      ...(dto.name !== undefined && { name: dto.name }),
+      ...(dto.description !== undefined && { description: dto.description }),
+      ...(dto.price !== undefined && { price: dto.price }),
+      ...(dto.stock !== undefined && { stock: dto.stock }),
+      ...(dto.categoryId !== undefined && {
+        category: { connect: { id: dto.categoryId } },
+      }),
       ...(imageFile && { imageFile }),
-    });
+    };
+
+    const updatedProduct = await this.repo.update(id, updateData);
 
     return successResponse(updatedProduct, 'Product updated successfully');
   }

@@ -67,8 +67,12 @@ export class UpdateProductDto {
 
   @ApiPropertyOptional({ example: 999.99, description: 'Product price' })
   @Transform(({ value }) => {
-    if (value === 'null' || value === 'undefined' || value.trim() === '') {
-      return null;
+    if (
+      value === 'null' ||
+      value === 'undefined' ||
+      value?.toString().trim() === ''
+    ) {
+      return undefined;
     }
     return value;
   })
@@ -88,8 +92,12 @@ export class UpdateProductDto {
     description: 'Category unique identifier (UUID v4)',
   })
   @Transform(({ value }) => {
-    if (value === 'null' || value === 'undefined' || value.trim() === '') {
-      return null;
+    if (
+      value === 'null' ||
+      value === 'undefined' ||
+      value?.toString().trim() === ''
+    ) {
+      return undefined;
     }
     return value;
   })

@@ -128,6 +128,7 @@ export class GetProductsDto extends PaginationDto {
     description: 'Minimum price filter',
   })
   @IsOptional()
+  @Type(() => Number)
   @IsNumber({}, { message: 'Minimum price must be a number' })
   @Min(0, { message: 'Minimum price cannot be negative' })
   minPrice?: number;
@@ -137,6 +138,7 @@ export class GetProductsDto extends PaginationDto {
     description: 'Maximum price filter',
   })
   @IsOptional()
+  @Type(() => Number)
   @IsNumber({}, { message: 'Maximum price must be a number' })
   @Min(0, { message: 'Maximum price cannot be negative' })
   maxPrice?: number;

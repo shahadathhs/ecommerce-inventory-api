@@ -11,13 +11,6 @@ export class CreateFileDto {
   filename: string;
 
   @ApiProperty({
-    example: 'product-images',
-    description: 'Supabase storage bucket name',
-  })
-  @IsString()
-  bucket: string;
-
-  @ApiProperty({
     example: 'user123/file_12345.png',
     description: 'Path inside the bucket',
   })

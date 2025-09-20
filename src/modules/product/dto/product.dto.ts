@@ -7,7 +7,6 @@ import {
   IsNotEmpty,
   IsNumber,
   IsOptional,
-  IsPositive,
   IsString,
   IsUUID,
   Min,
@@ -27,9 +26,7 @@ export class CreateProductDto {
   description?: string;
 
   @ApiProperty({ example: 999.99, description: 'Product price' })
-  @Type(() => Number)
   @IsDecimal()
-  @IsPositive()
   price: number;
 
   @ApiProperty({ example: 50, description: 'Available stock' })
@@ -46,13 +43,12 @@ export class CreateProductDto {
   @IsNotEmpty({ message: 'Category ID is required' })
   categoryId: string;
 
-  @ApiPropertyOptional({
+  @ApiProperty({
     type: 'string',
     format: 'binary',
     description: 'Optional product image',
   })
-  @IsOptional()
-  image?: Express.Multer.File;
+  image: Express.Multer.File;
 }
 
 export class UpdateProductDto extends PartialType(CreateProductDto) {}

@@ -4,7 +4,7 @@ import { AppError } from '@/common/error/handle-error.app';
 import { HandleError } from '@/common/error/handle-error.decorator';
 import { Global, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { FileType } from '@prisma/client';
+import { Bucket, FileType } from '@prisma/client';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import mime from 'mime-types';
 import { PrismaService } from '../prisma/prisma.service';
@@ -26,7 +26,7 @@ export class FileService {
 
   /* ================== CRUD ================== */
   @HandleError('Error creating file', 'file')
-  async create(createFileDto: CreateFileDto) {
+  async create(createFileDto: CreateFileDto & { bucket: Bucket }) {
     return this.prisma.fileInstance.create({ data: createFileDto });
   }
 
@@ -75,7 +75,7 @@ export class FileService {
 
   /* ================== UPLOAD ================== */
   @HandleError('Error processing uploaded file', 'file')
-  async processUploadedFile(file: Express.Multer.File, bucket = 'uploads') {
+  async processUploadedFile(file: Express.Multer.File, bucket: Bucket) {
     if (!file || !file.buffer)
       throw new AppError(400, 'Invalid file upload input');
 
@@ -95,7 +95,7 @@ export class FileService {
       throw new AppError(500, `Supabase upload failed: ${error.message}`);
 
     const fileType = this.mapMimeToPrismaFileType(file.mimetype);
-    const createFileDto: CreateFileDto = {
+    const createFileDto: CreateFileDto & { bucket: Bucket } = {
       filename,
       bucket,
       path: pathInBucket,
@@ -107,7 +107,7 @@ export class FileService {
     return this.create(createFileDto);
   }
 
-  async bulkUpload(files: Express.Multer.File[], bucket = 'uploads') {
+  async bulkUpload(files: Express.Multer.File[], bucket = Bucket.product) {
     return Promise.all(files.map((f) => this.processUploadedFile(f, bucket)));
   }
 

@@ -105,6 +105,13 @@ export class ProductService {
   ): Promise<TResponse<any>> {
     const { data: product } = await this.findOne(id);
 
+    if (dto.categoryId) {
+      const category = await this.categoryRepo.findById(dto.categoryId);
+      if (!category) {
+        throw new AppError(404, 'Category not found');
+      }
+    }
+
     let imageFile;
     if (file) {
       if (product.imageFileId) {

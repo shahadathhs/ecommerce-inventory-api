@@ -14,7 +14,10 @@ export class CategoryRepository {
   async findById(id: string): Promise<Category | null> {
     return this.prisma.category.findUnique({
       where: { id },
-      include: { products: true },
+      include: {
+        _count: { select: { products: true } },
+        products: true,
+      },
     });
   }
 
@@ -33,8 +36,9 @@ export class CategoryRepository {
         take,
         include: {
           _count: { select: { products: true } },
+          products: true,
         },
-        orderBy: { name: 'asc' },
+        orderBy: { name: 'desc' },
       }),
       this.prisma.category.count({ where }),
     ]);

@@ -1,10 +1,19 @@
 import { AppError } from '@/common/error/handle-error.app';
 import { HandleError } from '@/common/error/handle-error.decorator';
-import { successResponse, TResponse } from '@/common/utils/response.utils';
+import {
+  successPaginatedResponse,
+  successResponse,
+  TPaginatedResponse,
+  TResponse,
+} from '@/common/utils/response.utils';
 import { FileService } from '@/lib/file/file.service';
 import { Injectable } from '@nestjs/common';
 import { CategoryRepository } from '../category/repo/category.repository';
-import { CreateProductDto } from './dto/product.dto';
+import {
+  CreateProductDto,
+  GetProductsDto,
+  UpdateProductDto,
+} from './dto/product.dto';
 import { ProductRepository } from './repo/product.repository';
 
 @Injectable()
@@ -53,5 +62,80 @@ export class ProductService {
     });
 
     return successResponse(product, 'Product created successfully');
+  }
+
+  @HandleError('Failed to fetch products', 'Products')
+  async findAll(query: GetProductsDto): Promise<TPaginatedResponse<any>> {
+    const page = query.page && query.page > 0 ? query.page : 1;
+    const limit = query.limit && query.limit > 0 ? query.limit : 10;
+
+    const [items, total] = await this.repo.findAndCount({
+      categoryId: query.categoryId,
+      minPrice: query.minPrice,
+      maxPrice: query.maxPrice,
+      skip: (page - 1) * limit,
+      take: limit,
+    });
+
+    return successPaginatedResponse(
+      items,
+      {
+        page,
+        limit,
+        total,
+      },
+      'Products fetched successfully',
+    );
+  }
+
+  @HandleError('Failed to fetch product', 'Product')
+  async findOne(id: string): Promise<TResponse<any>> {
+    const product = await this.repo.findById(id);
+    if (!product) throw new AppError(404, 'Product not found');
+
+    return successResponse(product, 'Product fetched successfully');
+  }
+
+  @HandleError('Failed to update product', 'Product')
+  async update(
+    id: string,
+    dto: UpdateProductDto,
+    file?: Express.Multer.File,
+  ): Promise<TResponse<any>> {
+    const { data: product } = await this.findOne(id);
+
+    let imageFile;
+    if (file) {
+      if (product.imageFileId) {
+        await this.fileService.remove(product.imageFileId);
+      }
+      const uploaded = await this.fileService.processUploadedFile(
+        file,
+        'product',
+      );
+      imageFile = { connect: { id: uploaded.id } };
+    }
+
+    const updatedProduct = await this.repo.update(id, {
+      ...dto,
+      category: dto.categoryId
+        ? { connect: { id: dto.categoryId } }
+        : undefined,
+      ...(imageFile && { imageFile }),
+    });
+
+    return successResponse(updatedProduct, 'Product updated successfully');
+  }
+
+  async delete(id: string) {
+    const { data: product } = await this.findOne(id);
+
+    if (product.imageFileId) {
+      await this.fileService.remove(product.imageFileId);
+    }
+
+    await this.repo.delete(id);
+
+    return successResponse(null, 'Product deleted successfully');
   }
 }

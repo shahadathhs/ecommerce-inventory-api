@@ -1,7 +1,6 @@
 import { PrismaService } from '@/lib/prisma/prisma.service';
 import { Injectable } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
-import { GetProductsDto, UpdateProductDto } from '../dto/product.dto';
 
 @Injectable()
 export class ProductRepository {
@@ -14,11 +13,13 @@ export class ProductRepository {
     });
   }
 
-  async findAndCount(query: GetProductsDto) {
-    const page = query.page && query.page > 0 ? query.page : 1;
-    const limit = query.limit && query.limit > 0 ? query.limit : 10;
-    const skip = (page - 1) * limit;
-
+  async findAndCount(query: {
+    categoryId?: string;
+    minPrice?: number;
+    maxPrice?: number;
+    skip: number;
+    take: number;
+  }) {
     const where = this.buildProductWhere({
       categoryId: query.categoryId,
       minPrice: query.minPrice,
@@ -28,8 +29,8 @@ export class ProductRepository {
     return await this.prisma.$transaction([
       this.prisma.product.findMany({
         where,
-        skip,
-        take: limit,
+        skip: query.skip,
+        take: query.take,
         include: {
           category: true,
           imageFile: true,
@@ -50,7 +51,7 @@ export class ProductRepository {
     });
   }
 
-  update(id: string, data: UpdateProductDto) {
+  update(id: string, data: Prisma.ProductUpdateInput) {
     return this.prisma.product.update({
       where: { id },
       data,

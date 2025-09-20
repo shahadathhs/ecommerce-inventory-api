@@ -1,6 +1,6 @@
 import { PaginationDto } from '@/common/dto/pagination.dto';
-import { ApiProperty, ApiPropertyOptional, PartialType } from '@nestjs/swagger';
-import { Type } from 'class-transformer';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { Transform, Type } from 'class-transformer';
 import {
   IsDecimal,
   IsInt,
@@ -51,7 +51,60 @@ export class CreateProductDto {
   image: Express.Multer.File;
 }
 
-export class UpdateProductDto extends PartialType(CreateProductDto) {}
+export class UpdateProductDto {
+  @ApiPropertyOptional({ example: 'iPhone 15', description: 'Product name' })
+  @IsOptional()
+  @IsString()
+  name?: string;
+
+  @ApiPropertyOptional({
+    example: 'Latest Apple iPhone model',
+    description: 'Product description',
+  })
+  @IsOptional()
+  @IsString()
+  description?: string;
+
+  @ApiPropertyOptional({ example: 999.99, description: 'Product price' })
+  @Transform(({ value }) => {
+    if (value === 'null' || value === 'undefined' || value.trim() === '') {
+      return null;
+    }
+    return value;
+  })
+  @IsOptional()
+  @IsDecimal()
+  price?: number;
+
+  @ApiPropertyOptional({ example: 50, description: 'Available stock' })
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(0)
+  stock?: number;
+
+  @ApiPropertyOptional({
+    example: '550e8400-e29b-41d4-a716-446655440000',
+    description: 'Category unique identifier (UUID v4)',
+  })
+  @Transform(({ value }) => {
+    if (value === 'null' || value === 'undefined' || value.trim() === '') {
+      return null;
+    }
+    return value;
+  })
+  @IsOptional()
+  @IsUUID('4', { message: 'Category ID must be a valid UUID v4' })
+  categoryId?: string;
+
+  @ApiPropertyOptional({
+    type: 'string',
+    format: 'binary',
+    description: 'Optional product image',
+  })
+  @IsOptional()
+  image?: Express.Multer.File;
+}
 
 export class GetProductsDto extends PaginationDto {
   @ApiPropertyOptional({

@@ -8,7 +8,10 @@ export class ProductRepository {
   constructor(private readonly prisma: PrismaService) {}
 
   create(data: Prisma.ProductCreateInput) {
-    return this.prisma.product.create({ data });
+    return this.prisma.product.create({
+      data,
+      include: { imageFile: true, category: true },
+    });
   }
 
   async findAndCount(query: GetProductsDto) {
@@ -48,7 +51,11 @@ export class ProductRepository {
   }
 
   update(id: string, data: UpdateProductDto) {
-    return this.prisma.product.update({ where: { id }, data });
+    return this.prisma.product.update({
+      where: { id },
+      data,
+      include: { imageFile: true, category: true },
+    });
   }
 
   delete(id: string) {

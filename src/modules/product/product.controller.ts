@@ -1,5 +1,6 @@
 import { JwtAuthGuard } from '@/common/jwt/jwt.decorator';
 import {
+  BadRequestException,
   Body,
   Controller,
   Post,
@@ -21,7 +22,21 @@ export class ProductController {
 
   @Post()
   @ApiConsumes('multipart/form-data')
-  @UseInterceptors(FileInterceptor('image'))
+  @UseInterceptors(
+    FileInterceptor('image', {
+      limits: { fileSize: 10 * 1024 * 1024 }, // 10 MB Max
+      fileFilter: (req, file, callback) => {
+        // Accept only image mimetype
+        if (!file.mimetype.startsWith('image/')) {
+          return callback(
+            new BadRequestException('Only image files are allowed!'),
+            false,
+          );
+        }
+        callback(null, true);
+      },
+    }),
+  )
   create(
     @Body() dto: CreateProductDto,
     @UploadedFile() file: Express.Multer.File,

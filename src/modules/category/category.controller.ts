@@ -1,14 +1,16 @@
+import { JwtAuthGuard } from '@/common/jwt/jwt.decorator';
 import {
   Body,
   Controller,
   Delete,
   Get,
   Param,
+  Patch,
   Post,
-  Put,
   Query,
+  UseGuards,
 } from '@nestjs/common';
-import { ApiOperation, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { CategoryService } from './category.service';
 import {
   CreateCategoryDto,
@@ -17,6 +19,8 @@ import {
 } from './dto/category.dto';
 
 @ApiTags('Categories')
+@ApiBearerAuth()
+@UseGuards(JwtAuthGuard)
 @Controller('api/categories')
 export class CategoryController {
   constructor(private readonly service: CategoryService) {}
@@ -40,7 +44,7 @@ export class CategoryController {
   }
 
   @ApiOperation({ summary: 'Update category' })
-  @Put(':id')
+  @Patch(':id')
   update(@Param('id') id: string, @Body() dto: UpdateCategoryDto) {
     return this.service.update(id, dto);
   }
